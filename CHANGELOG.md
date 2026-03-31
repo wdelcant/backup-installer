@@ -1,3 +1,10 @@
+## [1.2.2](https://github.com/wdelcant/backup-installer/compare/v1.2.1...v1.2.2) (2026-03-31)
+
+
+### Bug Fixes
+
+* make form inputs editable with textinput component ([a2d2414](https://github.com/wdelcant/backup-installer/commit/a2d241479a800d2e479594be1a248c6243ade3c2))
+
 ## [1.2.1](https://github.com/wdelcant/backup-installer/compare/v1.2.0...v1.2.1) (2026-03-31)
 
 

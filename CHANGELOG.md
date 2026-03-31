@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/wdelcant/backup-installer/compare/v1.1.0...v1.2.0) (2026-03-31)
+
+
+### Features
+
+* auto-add to PATH when installing to ~/bin ([4bb5a85](https://github.com/wdelcant/backup-installer/commit/4bb5a859abf97efad7938d4e8b3cae385433082c))
+
 # [1.1.0](https://github.com/wdelcant/backup-installer/compare/v1.0.0...v1.1.0) (2026-03-31)
 
 

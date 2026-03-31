@@ -64,14 +64,13 @@ func (m Model) viewDBSource() string {
 	content := logo.Header("Base de Datos ORIGEN (Producción)")
 	content += "\n\n"
 
-	// Form fields
-	content += RenderLabel("Host") + RenderInput(m.dbSourceHost, m.cursor == 0) + "\n"
-	content += RenderLabel("Puerto") + RenderInput(m.dbSourcePort, m.cursor == 1) + "\n"
-	content += RenderLabel("Base de datos") + RenderInput(m.dbSourceDatabase, m.cursor == 2) + "\n"
-	content += RenderLabel("Usuario") + RenderInput(m.dbSourceUsername, m.cursor == 3) + "\n"
-	content += RenderLabel("Contraseña") + RenderInput("••••••••", m.cursor == 4) + "\n"
+	// Form fields with real inputs
+	content += RenderLabel("Host") + m.sourceInputs[0].View() + "\n\n"
+	content += RenderLabel("Puerto") + m.sourceInputs[1].View() + "\n\n"
+	content += RenderLabel("Base de datos") + m.sourceInputs[2].View() + "\n\n"
+	content += RenderLabel("Usuario") + m.sourceInputs[3].View() + "\n\n"
+	content += RenderLabel("Contraseña") + m.sourceInputs[4].View() + "\n\n"
 
-	content += "\n"
 	content += helpStyle.Render("[Tab/Shift+Tab] Navegar  [Enter] Continuar  [Esc] Volver")
 
 	return content
@@ -93,7 +92,7 @@ func (m Model) viewMode() string {
 	}
 
 	for i, mode := range modes {
-		selected := m.cursor == i
+		selected := m.selectedMode == i
 		style := lipgloss.NewStyle()
 		if selected {
 			style = style.Foreground(colorPrimary).Bold(true)
@@ -132,14 +131,13 @@ func (m Model) viewDBTarget() string {
 	content += warningBox.Render(warningContent)
 	content += "\n\n"
 
-	// Form fields
-	content += RenderLabel("Host") + RenderInput(m.dbTargetHost, m.cursor == 0) + "\n"
-	content += RenderLabel("Puerto") + RenderInput(m.dbTargetPort, m.cursor == 1) + "\n"
-	content += RenderLabel("Base de datos") + RenderInput(m.dbTargetDatabase, m.cursor == 2) + "\n"
-	content += RenderLabel("Usuario") + RenderInput(m.dbTargetUsername, m.cursor == 3) + "\n"
-	content += RenderLabel("Contraseña") + RenderInput("••••••••", m.cursor == 4) + "\n"
+	// Form fields with real inputs
+	content += RenderLabel("Host") + m.targetInputs[0].View() + "\n\n"
+	content += RenderLabel("Puerto") + m.targetInputs[1].View() + "\n\n"
+	content += RenderLabel("Base de datos") + m.targetInputs[2].View() + "\n\n"
+	content += RenderLabel("Usuario") + m.targetInputs[3].View() + "\n\n"
+	content += RenderLabel("Contraseña") + m.targetInputs[4].View() + "\n\n"
 
-	content += "\n"
 	content += helpStyle.Render("[Tab/Shift+Tab] Navegar  [Enter] Continuar  [Esc] Volver")
 
 	return content
@@ -150,11 +148,9 @@ func (m Model) viewSchedule() string {
 	content := logo.Header("Horario de Ejecución")
 	content += "\n\n"
 
-	content += RenderLabel("Expresión Cron") + RenderInput(m.cronExpression, true) + "\n"
-	content += "\n"
-	content += RenderLabel("Zona horaria") + RenderInput(m.timezone, m.cursor == 1) + "\n"
+	content += RenderLabel("Expresión Cron") + m.scheduleInputs[0].View() + "\n\n"
+	content += RenderLabel("Zona horaria") + m.scheduleInputs[1].View() + "\n\n"
 
-	content += "\n\n"
 	content += helpStyle.Render("Ejemplos:\n")
 	content += helpStyle.Render("  0 2 * * *     → Diario a las 02:00\n")
 	content += helpStyle.Render("  0 */4 * * *   → Cada 4 horas\n")
@@ -162,7 +158,7 @@ func (m Model) viewSchedule() string {
 	content += "\n\n"
 	content += buttonStyle.Render("[Enter] Continuar")
 	content += "\n\n"
-	content += helpStyle.Render("[Esc] Volver")
+	content += helpStyle.Render("[Tab/Shift+Tab] Navegar  [Esc] Volver")
 
 	return content
 }
@@ -172,15 +168,15 @@ func (m Model) viewRetention() string {
 	content := logo.Header("Retención y Almacenamiento")
 	content += "\n\n"
 
-	content += RenderLabel("Directorio local") + RenderInput(m.backupPath, m.cursor == 0) + "\n"
-	content += RenderLabel("Días a mantener") + RenderInput(fmt.Sprintf("%d", m.retentionDays), m.cursor == 1) + "\n"
+	content += RenderLabel("Directorio local") + m.retentionInputs[0].View() + "\n\n"
+	content += RenderLabel("Días a mantener") + m.retentionInputs[1].View() + "\n\n"
 
-	content += "\n\n"
+	content += "\n"
 	content += helpStyle.Render("Los backups más antiguos se eliminarán automáticamente.\n")
 	content += "\n"
 	content += buttonStyle.Render("[Enter] Continuar")
 	content += "\n\n"
-	content += helpStyle.Render("[Esc] Volver")
+	content += helpStyle.Render("[Tab/Shift+Tab] Navegar  [Esc] Volver")
 
 	return content
 }
@@ -190,20 +186,15 @@ func (m Model) viewWebhook() string {
 	content := logo.Header("Notificaciones Webhook (n8n)")
 	content += "\n\n"
 
-	if m.webhookEnabled {
-		content += RenderLabel("URL Webhook") + RenderInput(m.webhookURL, m.cursor == 0) + "\n"
-		content += RenderLabel("Token") + RenderInput("••••••••", m.cursor == 1) + "\n"
-	} else {
-		content += "¿Quieres configurar notificaciones webhook a n8n?\n\n"
-		content += helpStyle.Render("Recibirás notificaciones con el estado de cada backup.\n")
-	}
+	content += RenderLabel("URL Webhook") + m.webhookInputs[0].View() + "\n\n"
+	content += RenderLabel("Token") + m.webhookInputs[1].View() + "\n\n"
 
 	content += "\n\n"
 	content += buttonStyle.Render("[Enter] Continuar")
 	content += "   "
 	content += lipgloss.NewStyle().Foreground(colorSecondary).Render("[s] Saltar")
 	content += "\n\n"
-	content += helpStyle.Render("[Esc] Volver")
+	content += helpStyle.Render("[Tab/Shift+Tab] Navegar  [Esc] Volver")
 
 	return content
 }
@@ -220,14 +211,14 @@ func (m Model) viewSummary() string {
 		Width(60)
 
 	summary := fmt.Sprintf(
-		"ORIGEN:  %s @ %s:%s\n"+
+		"ORIGEN:  %s @ %s:%d\n"+
 			"DESTINO: %s ( %s )\n"+
 			"SCHEDULE: %s\n"+
 			"RETENCIÓN: %d días\n"+
 			"WEBHOOK: %s",
 		m.config.Source.Database,
 		m.config.Source.Host,
-		fmt.Sprintf("%d", m.config.Source.Port),
+		m.config.Source.Port,
 		func() string {
 			if m.config.Target.Enabled {
 				return m.config.Target.Database

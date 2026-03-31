@@ -2,7 +2,8 @@
 package tui
 
 import (
-	"github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/bubbles/textinput"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/wdelcant/backup-installer/internal/config"
 	"github.com/wdelcant/backup-installer/internal/crypto"
 )
@@ -67,39 +68,162 @@ type Model struct {
 	installProgress float64
 	installStatus   string
 
-	// Form fields (will be populated in each step's view)
-	dbSourceHost     string
-	dbSourcePort     string
-	dbSourceDatabase string
-	dbSourceUsername string
-	dbSourcePassword string
+	// Form inputs - Source DB
+	sourceInputs []textinput.Model
 
-	dbTargetEnabled  bool
-	dbTargetHost     string
-	dbTargetPort     string
-	dbTargetDatabase string
-	dbTargetUsername string
-	dbTargetPassword string
-	restoreDelay     int
+	// Form inputs - Target DB
+	targetInputs []textinput.Model
 
-	cronExpression string
-	timezone       string
+	// Form inputs - Schedule
+	scheduleInputs []textinput.Model
 
-	retentionDays int
-	backupPath    string
+	// Form inputs - Retention
+	retentionInputs []textinput.Model
 
+	// Form inputs - Webhook
+	webhookInputs []textinput.Model
+
+	// Mode selection
+	selectedMode int
+
+	// Webhook enabled
 	webhookEnabled bool
-	webhookURL     string
-	webhookToken   string
+}
+
+// NewModel creates a new TUI model
+func NewModel(configManager *config.Manager, keyManager *crypto.MasterKeyManager, encryptor *crypto.Encryptor) Model {
+	m := Model{
+		step:            StepWelcome,
+		isFirstRun:      true,
+		configManager:   configManager,
+		keyManager:      keyManager,
+		encryptor:       encryptor,
+		config:          &config.Config{},
+		installProgress: 0,
+		installStatus:   "",
+	}
+
+	// Initialize source DB inputs
+	m.sourceInputs = make([]textinput.Model, 5)
+	for i := range m.sourceInputs {
+		t := textinput.New()
+		t.CharLimit = 100
+		t.Width = 40
+
+		switch i {
+		case 0: // Host
+			t.Placeholder = "localhost"
+			t.Focus()
+		case 1: // Port
+			t.Placeholder = "5432"
+			t.SetValue("5432")
+		case 2: // Database
+			t.Placeholder = "myapp_production"
+		case 3: // Username
+			t.Placeholder = "postgres"
+		case 4: // Password
+			t.Placeholder = "********"
+			t.EchoMode = textinput.EchoPassword
+			t.EchoCharacter = '•'
+		}
+		m.sourceInputs[i] = t
+	}
+
+	// Initialize target DB inputs
+	m.targetInputs = make([]textinput.Model, 5)
+	for i := range m.targetInputs {
+		t := textinput.New()
+		t.CharLimit = 100
+		t.Width = 40
+
+		switch i {
+		case 0: // Host
+			t.Placeholder = "localhost"
+			t.Focus()
+		case 1: // Port
+			t.Placeholder = "5432"
+			t.SetValue("5432")
+		case 2: // Database
+			t.Placeholder = "myapp_qa"
+		case 3: // Username
+			t.Placeholder = "postgres"
+		case 4: // Password
+			t.Placeholder = "********"
+			t.EchoMode = textinput.EchoPassword
+			t.EchoCharacter = '•'
+		}
+		m.targetInputs[i] = t
+	}
+
+	// Initialize schedule inputs
+	m.scheduleInputs = make([]textinput.Model, 2)
+	for i := range m.scheduleInputs {
+		t := textinput.New()
+		t.CharLimit = 50
+		t.Width = 40
+
+		switch i {
+		case 0: // Cron expression
+			t.Placeholder = "0 2 * * *"
+			t.SetValue("0 2 * * *")
+			t.Focus()
+		case 1: // Timezone
+			t.Placeholder = "America/Santiago"
+			t.SetValue("America/Santiago")
+		}
+		m.scheduleInputs[i] = t
+	}
+
+	// Initialize retention inputs
+	m.retentionInputs = make([]textinput.Model, 2)
+	for i := range m.retentionInputs {
+		t := textinput.New()
+		t.CharLimit = 50
+		t.Width = 40
+
+		switch i {
+		case 0: // Backup path
+			t.Placeholder = "./backups"
+			t.SetValue("./backups")
+			t.Focus()
+		case 1: // Retention days
+			t.Placeholder = "7"
+			t.SetValue("7")
+		}
+		m.retentionInputs[i] = t
+	}
+
+	// Initialize webhook inputs
+	m.webhookInputs = make([]textinput.Model, 2)
+	for i := range m.webhookInputs {
+		t := textinput.New()
+		t.CharLimit = 200
+		t.Width = 40
+
+		switch i {
+		case 0: // URL
+			t.Placeholder = "https://n8n.example.com/webhook/..."
+			t.Focus()
+		case 1: // Token
+			t.Placeholder = "optional-token"
+			t.EchoMode = textinput.EchoPassword
+			t.EchoCharacter = '•'
+		}
+		m.webhookInputs[i] = t
+	}
+
+	return m
 }
 
 // Init initializes the TUI
 func (m Model) Init() tea.Cmd {
-	return nil
+	return textinput.Blink
 }
 
 // Update handles messages and updates the model
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmds []tea.Cmd
+
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		return m.handleKeyPress(msg)
@@ -123,7 +247,41 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
-	return m, nil
+	// Update focused inputs based on current step
+	switch m.step {
+	case StepDBSource:
+		for i := range m.sourceInputs {
+			var cmd tea.Cmd
+			m.sourceInputs[i], cmd = m.sourceInputs[i].Update(msg)
+			cmds = append(cmds, cmd)
+		}
+	case StepDBTarget:
+		for i := range m.targetInputs {
+			var cmd tea.Cmd
+			m.targetInputs[i], cmd = m.targetInputs[i].Update(msg)
+			cmds = append(cmds, cmd)
+		}
+	case StepSchedule:
+		for i := range m.scheduleInputs {
+			var cmd tea.Cmd
+			m.scheduleInputs[i], cmd = m.scheduleInputs[i].Update(msg)
+			cmds = append(cmds, cmd)
+		}
+	case StepRetention:
+		for i := range m.retentionInputs {
+			var cmd tea.Cmd
+			m.retentionInputs[i], cmd = m.retentionInputs[i].Update(msg)
+			cmds = append(cmds, cmd)
+		}
+	case StepWebhook:
+		for i := range m.webhookInputs {
+			var cmd tea.Cmd
+			m.webhookInputs[i], cmd = m.webhookInputs[i].Update(msg)
+			cmds = append(cmds, cmd)
+		}
+	}
+
+	return m, tea.Batch(cmds...)
 }
 
 // View renders the current step
@@ -160,6 +318,53 @@ func (m Model) View() string {
 	}
 }
 
+// focusInput focuses the input at the given index for the current step
+func (m *Model) focusInput(index int) {
+	// Blur all inputs first
+	switch m.step {
+	case StepDBSource:
+		for i := range m.sourceInputs {
+			if i == index {
+				m.sourceInputs[i].Focus()
+			} else {
+				m.sourceInputs[i].Blur()
+			}
+		}
+	case StepDBTarget:
+		for i := range m.targetInputs {
+			if i == index {
+				m.targetInputs[i].Focus()
+			} else {
+				m.targetInputs[i].Blur()
+			}
+		}
+	case StepSchedule:
+		for i := range m.scheduleInputs {
+			if i == index {
+				m.scheduleInputs[i].Focus()
+			} else {
+				m.scheduleInputs[i].Blur()
+			}
+		}
+	case StepRetention:
+		for i := range m.retentionInputs {
+			if i == index {
+				m.retentionInputs[i].Focus()
+			} else {
+				m.retentionInputs[i].Blur()
+			}
+		}
+	case StepWebhook:
+		for i := range m.webhookInputs {
+			if i == index {
+				m.webhookInputs[i].Focus()
+			} else {
+				m.webhookInputs[i].Blur()
+			}
+		}
+	}
+}
+
 // handleKeyPress processes keyboard input
 func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	// Global keys
@@ -170,6 +375,8 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "esc":
 		if m.step > StepWelcome {
 			m.step--
+			m.cursor = 0
+			m.focusInput(0)
 		}
 		return m, nil
 	}
@@ -186,6 +393,7 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "enter":
 			m.step = StepDBSource
+			m.focusInput(0)
 		}
 
 	case StepDBSource:
@@ -193,51 +401,134 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "enter":
 			// Validate and move to next step
+			m.config.Source.Host = m.sourceInputs[0].Value()
+			m.config.Source.Port = parsePort(m.sourceInputs[1].Value())
+			m.config.Source.Database = m.sourceInputs[2].Value()
+			m.config.Source.Username = m.sourceInputs[3].Value()
+			m.config.Source.Password = m.sourceInputs[4].Value()
 			m.step = StepMode
 		case "tab", "down":
-			m.cursor++
+			if m.cursor < len(m.sourceInputs)-1 {
+				m.cursor++
+				m.focusInput(m.cursor)
+			}
 		case "shift+tab", "up":
-			m.cursor--
+			if m.cursor > 0 {
+				m.cursor--
+				m.focusInput(m.cursor)
+			}
 		}
+		return m, textinput.Blink
 
 	case StepMode:
 		switch msg.String() {
 		case "enter":
+			m.config.Target.Enabled = m.selectedMode == 1
 			if m.config.Target.Enabled {
 				m.step = StepDBTarget
+				m.focusInput(0)
 			} else {
 				m.step = StepSchedule
+				m.focusInput(0)
 			}
-		case "up", "down":
-			m.cursor++
+		case "up":
+			if m.selectedMode > 0 {
+				m.selectedMode--
+			}
+		case "down":
+			if m.selectedMode < 2 {
+				m.selectedMode++
+			}
 		}
 
 	case StepDBTarget:
 		switch msg.String() {
 		case "enter":
+			m.config.Target.Host = m.targetInputs[0].Value()
+			m.config.Target.Port = parsePort(m.targetInputs[1].Value())
+			m.config.Target.Database = m.targetInputs[2].Value()
+			m.config.Target.Username = m.targetInputs[3].Value()
+			m.config.Target.Password = m.targetInputs[4].Value()
 			m.step = StepSchedule
+			m.focusInput(0)
+		case "tab", "down":
+			if m.cursor < len(m.targetInputs)-1 {
+				m.cursor++
+				m.focusInput(m.cursor)
+			}
+		case "shift+tab", "up":
+			if m.cursor > 0 {
+				m.cursor--
+				m.focusInput(m.cursor)
+			}
 		}
+		return m, textinput.Blink
 
 	case StepSchedule:
 		switch msg.String() {
 		case "enter":
+			m.config.Schedule.CronExpression = m.scheduleInputs[0].Value()
+			m.config.Schedule.Timezone = m.scheduleInputs[1].Value()
 			m.step = StepRetention
+			m.focusInput(0)
+		case "tab", "down":
+			if m.cursor < len(m.scheduleInputs)-1 {
+				m.cursor++
+				m.focusInput(m.cursor)
+			}
+		case "shift+tab", "up":
+			if m.cursor > 0 {
+				m.cursor--
+				m.focusInput(m.cursor)
+			}
 		}
+		return m, textinput.Blink
 
 	case StepRetention:
 		switch msg.String() {
 		case "enter":
+			m.config.Storage.LocalPath = m.retentionInputs[0].Value()
+			m.config.Storage.RetentionDays = parseInt(m.retentionInputs[1].Value())
 			m.step = StepWebhook
+			m.focusInput(0)
+		case "tab", "down":
+			if m.cursor < len(m.retentionInputs)-1 {
+				m.cursor++
+				m.focusInput(m.cursor)
+			}
+		case "shift+tab", "up":
+			if m.cursor > 0 {
+				m.cursor--
+				m.focusInput(m.cursor)
+			}
 		}
+		return m, textinput.Blink
 
 	case StepWebhook:
 		switch msg.String() {
 		case "enter":
+			m.config.Webhook.URL = m.webhookInputs[0].Value()
+			if m.webhookInputs[1].Value() != "" {
+				m.config.Webhook.Headers["Authorization"] = m.webhookInputs[1].Value()
+			}
+			m.config.Webhook.Enabled = m.webhookEnabled && m.config.Webhook.URL != ""
 			m.step = StepSummary
 		case "s":
 			// Skip webhook
+			m.webhookEnabled = false
 			m.step = StepSummary
+		case "tab", "down":
+			if m.cursor < len(m.webhookInputs)-1 {
+				m.cursor++
+				m.focusInput(m.cursor)
+			}
+		case "shift+tab", "up":
+			if m.cursor > 0 {
+				m.cursor--
+				m.focusInput(m.cursor)
+			}
 		}
+		return m, textinput.Blink
 
 	case StepSummary:
 		switch msg.String() {
@@ -246,6 +537,7 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return m, m.runInstallation()
 		case "esc":
 			m.step = StepWebhook
+			m.focusInput(0)
 		}
 
 	case StepSuccess:

@@ -1,0 +1,29 @@
+# Backup Installer - Ignore generated and sensitive files
+
+# Binarios
+bin/
+backup-installer
+*.exe
+
+# Config local (sensible - contiene credenciales encriptadas)
+config/config.yaml
+config/*.local.yaml
+config/*.key
+
+# Scripts generados (no versionar)
+scripts/*.sh
+!scripts/.gitkeep
+
+# Logs
+logs/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Go
+vendor/
+go.work
+*.test
+*.out

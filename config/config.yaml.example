@@ -1,0 +1,57 @@
+# INVITSM Backup Installer Configuration Template
+# Copy this file to config.yaml and fill in your values
+# DO NOT COMMIT config.yaml - Contains sensitive data
+
+version: "1.0"
+generated: "2026-03-31T00:00:00Z"
+
+# Source database (Production)
+source:
+  host: "your-production-db.example.com"
+  port: 5432
+  database: "your_production_db"
+  username: "postgres"
+  password: ""  # Will be encrypted automatically
+
+# Target database (QA/Dev) - Optional
+target:
+  enabled: false  # Set to true for auto-restore
+  host: "your-dev-db.example.com"
+  port: 5432
+  database: "your_development_db"
+  username: "postgres"
+  password: ""  # Will be encrypted automatically
+  restore_delay_minutes: 30
+  create_safety_backup: true
+
+# Schedule
+schedule:
+  cron_expression: "0 2 * * *"  # Daily at 2 AM
+  timezone: "America/Santiago"
+  next_run: ""  # Auto-calculated
+
+# Storage
+storage:
+  local_path: "/opt/invitsm/backups"
+  retention_days: 7
+  compression: "gzip"
+  additional_destinations: []
+
+# Webhook notifications (n8n) - Optional
+webhook:
+  enabled: false
+  url: "https://n8n.yourdomain.com/webhook/backup"
+  headers:
+    Authorization: "Bearer your-webhook-token-here"  # Will be encrypted
+  events:
+    - pipeline_completed
+    - pipeline_failed
+  timeout_seconds: 30
+  retry_attempts: 3
+
+# Logging
+logging:
+  level: "info"
+  path: "./logs"
+  rotation: "daily"
+  max_size_mb: 100

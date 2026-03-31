@@ -121,34 +121,25 @@ verify_checksum() {
     fi
 }
 
+# Detect user's shell and config file
+detect_shell_config() {
+    local user_shell
+    user_shell=$(basename "$SHELL" 2>/dev/null || echo "bash")
+
+    if [ "$user_shell" = "zsh" ]; then
+        echo "$HOME/.zshrc"
+    else
+        echo "$HOME/.bashrc"
+    fi
+}
+
 # Add directory to PATH automatically
 add_to_path() {
     local dir="$1"
-    local shell_config=""
-    local current_shell=""
-
-    # Detect current shell
-    if [ -n "$ZSH_VERSION" ]; then
-        current_shell="zsh"
-        shell_config="$HOME/.zshrc"
-    elif [ -n "$BASH_VERSION" ]; then
-        current_shell="bash"
-        shell_config="$HOME/.bashrc"
-    else
-        # Try to detect from parent process
-        local parent_shell
-        parent_shell=$(ps -p $PPID -o comm= 2>/dev/null || echo "")
-        case "$parent_shell" in
-            *zsh*) current_shell="zsh"; shell_config="$HOME/.zshrc" ;;
-            *bash*) current_shell="bash"; shell_config="$HOME/.bashrc" ;;
-        esac
-    fi
-
-    # Fallback to bash if not detected
-    if [ -z "$shell_config" ]; then
-        current_shell="bash"
-        shell_config="$HOME/.bashrc"
-    fi
+    local shell_config
+    shell_config=$(detect_shell_config)
+    local user_shell
+    user_shell=$(basename "$SHELL" 2>/dev/null || echo "bash")
 
     log_warn "$dir no está en el PATH"
 
@@ -174,16 +165,17 @@ add_to_path() {
 
     log_info "✅ Agregado a $shell_config"
 
-    # Try to reload in current session
-    if [ "$current_shell" = "bash" ]; then
-        # shellcheck source=/dev/null
-        source "$shell_config" 2>/dev/null && log_info "Configuración recargada en la sesión actual" || true
-    elif [ "$current_shell" = "zsh" ]; then
-        log_info "Para zsh, cerrá y abrí una nueva terminal, o ejecutá:"
-        echo "  source $shell_config"
+    # For zsh users, also add to .zprofile if using macOS
+    if [ "$user_shell" = "zsh" ] && [ "$(uname -s)" = "Darwin" ] && [ -f "$HOME/.zprofile" ]; then
+        if ! grep -q "export PATH=.*$dir" "$HOME/.zprofile" 2>/dev/null; then
+            echo "" >> "$HOME/.zprofile"
+            echo "# Added by Backup Installer" >> "$HOME/.zprofile"
+            echo "export PATH=\"$dir:\$PATH\"" >> "$HOME/.zprofile"
+            log_info "También agregado a ~/.zprofile para macOS"
+        fi
     fi
 
-    log_info "Después de esto, podés usar: backup-installer"
+    log_info "Cerrá y abrí una nueva terminal para usar 'backup-installer'"
     echo ""
 }
 
@@ -248,7 +240,7 @@ main() {
 
     # Determine install location
     log_step "Instalando..."
-    if [ -w "$INSTALL_DIR" ] || [ "$EUID" -eq 0 ]; then
+    if [ -w "$INSTALL_DIR" ] || [ "$(id -u)" -eq 0 ]; then
         TARGET_DIR="$INSTALL_DIR"
         TARGET_NAME="backup-installer"
     else
@@ -285,7 +277,7 @@ main() {
         echo "  backup-installer"
     else
         echo "  $TARGET_PATH"
-        echo "  # o después de agregar $TARGET_DIR al PATH:"
+        echo "  # o después de reiniciar la terminal:"
         echo "  backup-installer"
     fi
     echo ""

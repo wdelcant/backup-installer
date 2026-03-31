@@ -73,13 +73,51 @@ go test ./internal/crypto -v
 make audit
 ```
 
-## 📦 Release Process
+## 🔄 Conventional Commits & Versionado Automático
 
-1. Update version in `main.go`
-2. Update `CHANGELOG.md`
-3. Tag the release: `git tag v1.0.0`
-4. Push tag: `git push origin v1.0.0`
-5. Create GitHub release with binaries
+Este proyecto usa [Conventional Commits](https://www.conventionalcommits.org/) para el versionado automático semántico.
+
+### Tipos de Commit
+
+| Tipo | Descripción | Versión |
+|------|-------------|---------|
+| `fix:` | Corrección de bug | Patch (1.0.0 → 1.0.1) |
+| `feat:` | Nueva funcionalidad | Minor (1.0.0 → 1.1.0) |
+| `BREAKING CHANGE:` | Cambio incompatible | Major (1.0.0 → 2.0.0) |
+| `docs:` | Documentación | - |
+| `style:` | Formato de código | - |
+| `refactor:` | Refactorización | - |
+| `perf:` | Performance | - |
+| `test:` | Tests | - |
+| `chore:` | Mantenimiento | - |
+| `ci:` | CI/CD | - |
+
+### Ejemplos
+
+```bash
+# Bug fix (genera v1.0.1)
+git commit -m "fix: resolve cron parsing error"
+
+# Nueva feature (genera v1.1.0)
+git commit -m "feat: add webhook notifications"
+
+# Breaking change (genera v2.0.0)
+git commit -m "feat: new auth system
+
+BREAKING CHANGE: old tokens no longer work"
+
+# Con scope
+git commit -m "feat(tui): add progress bar"
+```
+
+## 📦 Release Process (Automático)
+
+1. Hacer commits siguiendo Conventional Commits
+2. Mergear a `main`
+3. GitHub Actions detecta los cambios y crea el release automáticamente
+4. Los binarios se compilan para todas las plataformas
+
+**Nota**: Si usas `git push` sin commits tipo `feat:` o `fix:`, no se generará un nuevo release.
 
 ---
 

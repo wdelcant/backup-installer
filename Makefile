@@ -13,7 +13,7 @@ all: build
 build:
 	@echo "🔨 Building $(BINARY_NAME) v$(VERSION)..."
 	@mkdir -p $(BUILD_DIR)
-	@go build -o $(BUILD_DIR)/$(BINARY_NAME) $(CMD_DIR)
+	@go build -ldflags="-s -w -X main.Version=$(VERSION)" -o $(BUILD_DIR)/$(BINARY_NAME) $(CMD_DIR)
 	@echo "✅ Binary created: $(BUILD_DIR)/$(BINARY_NAME)"
 
 ## install: Run the installer wizard

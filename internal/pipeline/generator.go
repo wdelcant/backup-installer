@@ -9,7 +9,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/invitsm/invitsm-backup-installer/internal/config"
+	"github.com/wdelcant/backup-installer/internal/config"
 )
 
 // Generator creates pipeline scripts from templates

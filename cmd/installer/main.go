@@ -5,14 +5,14 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/invitsm/invitsm-backup-installer/internal/config"
-	"github.com/invitsm/invitsm-backup-installer/internal/crypto"
-	"github.com/invitsm/invitsm-backup-installer/internal/logo"
-	"github.com/invitsm/invitsm-backup-installer/internal/tui"
+	"github.com/wdelcant/backup-installer/internal/config"
+	"github.com/wdelcant/backup-installer/internal/crypto"
+	"github.com/wdelcant/backup-installer/internal/logo"
+	"github.com/wdelcant/backup-installer/internal/tui"
 )
 
 const (
-	appName    = "invitsm-backup-installer"
+	appName    = "backup-installer"
 	appVersion = "1.0.0"
 )
 

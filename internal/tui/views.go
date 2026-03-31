@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/invitsm/invitsm-backup-installer/internal/logo"
+	"github.com/wdelcant/backup-installer/internal/logo"
 )
 
 // viewWelcome renders the welcome screen

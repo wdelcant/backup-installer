@@ -1,4 +1,4 @@
-module github.com/invitsm/invitsm-backup-installer
+module github.com/wdelcant/backup-installer
 
 go 1.21
 

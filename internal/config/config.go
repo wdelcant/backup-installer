@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/invitsm/invitsm-backup-installer/internal/crypto"
+	"github.com/wdelcant/backup-installer/internal/crypto"
 	"gopkg.in/yaml.v3"
 )
 

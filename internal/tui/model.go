@@ -3,8 +3,8 @@ package tui
 
 import (
 	"github.com/charmbracelet/bubbletea"
-	"github.com/invitsm/invitsm-backup-installer/internal/config"
-	"github.com/invitsm/invitsm-backup-installer/internal/crypto"
+	"github.com/wdelcant/backup-installer/internal/config"
+	"github.com/wdelcant/backup-installer/internal/crypto"
 )
 
 // Step represents a wizard step

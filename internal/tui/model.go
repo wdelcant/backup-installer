@@ -226,7 +226,18 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		return m.handleKeyPress(msg)
+		// First, let the focused input handle the key
+		// This allows typing in the inputs
+		cmd := m.updateFocusedInput(msg)
+
+		// Then handle special keys for navigation
+		if msg.String() == "tab" || msg.String() == "shift+tab" ||
+			msg.String() == "enter" || msg.String() == "esc" ||
+			msg.String() == "up" || msg.String() == "down" {
+			return m.handleKeyPress(msg)
+		}
+
+		return m, cmd
 
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
@@ -363,6 +374,36 @@ func (m *Model) focusInput(index int) {
 			}
 		}
 	}
+}
+
+// updateFocusedInput passes the key message to the currently focused input
+func (m *Model) updateFocusedInput(msg tea.Msg) tea.Cmd {
+	var cmd tea.Cmd
+
+	switch m.step {
+	case StepDBSource:
+		if m.cursor >= 0 && m.cursor < len(m.sourceInputs) {
+			m.sourceInputs[m.cursor], cmd = m.sourceInputs[m.cursor].Update(msg)
+		}
+	case StepDBTarget:
+		if m.cursor >= 0 && m.cursor < len(m.targetInputs) {
+			m.targetInputs[m.cursor], cmd = m.targetInputs[m.cursor].Update(msg)
+		}
+	case StepSchedule:
+		if m.cursor >= 0 && m.cursor < len(m.scheduleInputs) {
+			m.scheduleInputs[m.cursor], cmd = m.scheduleInputs[m.cursor].Update(msg)
+		}
+	case StepRetention:
+		if m.cursor >= 0 && m.cursor < len(m.retentionInputs) {
+			m.retentionInputs[m.cursor], cmd = m.retentionInputs[m.cursor].Update(msg)
+		}
+	case StepWebhook:
+		if m.cursor >= 0 && m.cursor < len(m.webhookInputs) {
+			m.webhookInputs[m.cursor], cmd = m.webhookInputs[m.cursor].Update(msg)
+		}
+	}
+
+	return cmd
 }
 
 // handleKeyPress processes keyboard input

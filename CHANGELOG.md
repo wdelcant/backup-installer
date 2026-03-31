@@ -1,3 +1,10 @@
+## [1.2.3](https://github.com/wdelcant/backup-installer/compare/v1.2.2...v1.2.3) (2026-03-31)
+
+
+### Bug Fixes
+
+* enable typing in form input fields ([df506d7](https://github.com/wdelcant/backup-installer/commit/df506d79acd20c446fa534651932bcc5a926ec6c)), closes [#2](https://github.com/wdelcant/backup-installer/issues/2)
+
 ## [1.2.2](https://github.com/wdelcant/backup-installer/compare/v1.2.1...v1.2.2) (2026-03-31)
 
 

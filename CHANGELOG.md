@@ -1,3 +1,10 @@
+## [1.2.1](https://github.com/wdelcant/backup-installer/compare/v1.2.0...v1.2.1) (2026-03-31)
+
+
+### Bug Fixes
+
+* correctly detect user's shell for PATH configuration ([eff7a8f](https://github.com/wdelcant/backup-installer/commit/eff7a8f89fe314f35e778656d497029dbb9f476d))
+
 # [1.2.0](https://github.com/wdelcant/backup-installer/compare/v1.1.0...v1.2.0) (2026-03-31)
 
 

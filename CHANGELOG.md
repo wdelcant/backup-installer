@@ -1,6 +1,11 @@
-# 1.0.0 (2026-03-31)
+# Changelog
 
+All notable changes to this project will be documented in this file.
 
-### Features
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-* add backup pipeline generator and TUI wizard ([7cf97bd](https://github.com/wdelcant/backup-installer/commit/7cf97bd547b7c458c78ecd22b12f29cb95eba425))
+## [Unreleased]
+
+### Added
+- Initial release with semantic-release automation

@@ -121,6 +121,72 @@ verify_checksum() {
     fi
 }
 
+# Add directory to PATH automatically
+add_to_path() {
+    local dir="$1"
+    local shell_config=""
+    local current_shell=""
+
+    # Detect current shell
+    if [ -n "$ZSH_VERSION" ]; then
+        current_shell="zsh"
+        shell_config="$HOME/.zshrc"
+    elif [ -n "$BASH_VERSION" ]; then
+        current_shell="bash"
+        shell_config="$HOME/.bashrc"
+    else
+        # Try to detect from parent process
+        local parent_shell
+        parent_shell=$(ps -p $PPID -o comm= 2>/dev/null || echo "")
+        case "$parent_shell" in
+            *zsh*) current_shell="zsh"; shell_config="$HOME/.zshrc" ;;
+            *bash*) current_shell="bash"; shell_config="$HOME/.bashrc" ;;
+        esac
+    fi
+
+    # Fallback to bash if not detected
+    if [ -z "$shell_config" ]; then
+        current_shell="bash"
+        shell_config="$HOME/.bashrc"
+    fi
+
+    log_warn "$dir no está en el PATH"
+
+    # Check if already in shell config
+    if [ -f "$shell_config" ] && grep -q "export PATH=.*$dir" "$shell_config" 2>/dev/null; then
+        log_info "$dir ya está configurado en $shell_config"
+        log_info "Cerrá y abrí una nueva terminal para usar 'backup-installer'"
+        return 0
+    fi
+
+    # Add to shell config
+    log_step "Agregando $dir al PATH automáticamente..."
+
+    # Create backup
+    if [ -f "$shell_config" ]; then
+        cp "$shell_config" "$shell_config.backup.$(date +%Y%m%d%H%M%S)"
+    fi
+
+    # Add PATH export
+    echo "" >> "$shell_config"
+    echo "# Added by Backup Installer" >> "$shell_config"
+    echo "export PATH=\"$dir:\$PATH\"" >> "$shell_config"
+
+    log_info "✅ Agregado a $shell_config"
+
+    # Try to reload in current session
+    if [ "$current_shell" = "bash" ]; then
+        # shellcheck source=/dev/null
+        source "$shell_config" 2>/dev/null && log_info "Configuración recargada en la sesión actual" || true
+    elif [ "$current_shell" = "zsh" ]; then
+        log_info "Para zsh, cerrá y abrí una nueva terminal, o ejecutá:"
+        echo "  source $shell_config"
+    fi
+
+    log_info "Después de esto, podés usar: backup-installer"
+    echo ""
+}
+
 # Main installation function
 main() {
     echo ""
@@ -205,13 +271,9 @@ main() {
 
     log_info "Instalado en: $TARGET_PATH"
 
-    # Check if target dir is in PATH
+    # Check if target dir is in PATH and add automatically if needed
     if [[ ":$PATH:" != *":$TARGET_DIR:"* ]]; then
-        log_warn "$TARGET_DIR no está en el PATH"
-        echo ""
-        echo "Agrega esto a tu ~/.bashrc o ~/.zshrc:"
-        echo "  export PATH=\"$TARGET_DIR:\$PATH\""
-        echo ""
+        add_to_path "$TARGET_DIR"
     fi
 
     # Success message

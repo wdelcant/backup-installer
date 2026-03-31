@@ -10,6 +10,7 @@ Instalador TUI interactivo para configurar backups automáticos de PostgreSQL co
 - **🔄 Pipeline**: Backup → Restore automático en QA/Dev
 - **📡 Webhooks**: Notificaciones a n8n
 - **🐧 Multiplataforma**: Linux, macOS, Windows
+- **📦 Instalación**: One-liner automático con detección de arquitectura
 
 ## 📋 Requisitos
 

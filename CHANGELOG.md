@@ -1,3 +1,10 @@
+## [1.7.5](https://github.com/wdelcant/backup-installer/compare/v1.7.4...v1.7.5) (2026-04-01)
+
+
+### Bug Fixes
+
+* implement main loop for dashboard-wizard cycle ([dd4f7aa](https://github.com/wdelcant/backup-installer/commit/dd4f7aa4fbd841bb517381cae8ffa3fa4655b11c))
+
 ## [1.7.4](https://github.com/wdelcant/backup-installer/compare/v1.7.3...v1.7.4) (2026-04-01)
 
 

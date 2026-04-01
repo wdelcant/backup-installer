@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/wdelcant/backup-installer/compare/v1.2.4...v1.3.0) (2026-04-01)
+
+
+### Features
+
+* simplify backup mode selection to yes/no question ([558b90f](https://github.com/wdelcant/backup-installer/commit/558b90f2760c6d69cb23a4f070ada9c309f9f5b8)), closes [#4](https://github.com/wdelcant/backup-installer/issues/4)
+
 ## [1.2.4](https://github.com/wdelcant/backup-installer/compare/v1.2.3...v1.2.4) (2026-04-01)
 
 

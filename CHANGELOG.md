@@ -1,3 +1,10 @@
+# [1.7.0](https://github.com/wdelcant/backup-installer/compare/v1.6.1...v1.7.0) (2026-04-01)
+
+
+### Features
+
+* add --diagnose command for installation troubleshooting ([2867360](https://github.com/wdelcant/backup-installer/commit/286736068ffd6535170f4ec82df8228305f97c8c)), closes [#9](https://github.com/wdelcant/backup-installer/issues/9)
+
 ## [1.6.1](https://github.com/wdelcant/backup-installer/compare/v1.6.0...v1.6.1) (2026-04-01)
 
 

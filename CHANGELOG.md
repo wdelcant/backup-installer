@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/wdelcant/backup-installer/compare/v1.3.0...v1.4.0) (2026-04-01)
+
+
+### Features
+
+* add CLI commands and version checking ([061cdec](https://github.com/wdelcant/backup-installer/commit/061cdec0cec8de6ac6da1216ec6a9a02373c5081)), closes [#5](https://github.com/wdelcant/backup-installer/issues/5)
+
 # [1.3.0](https://github.com/wdelcant/backup-installer/compare/v1.2.4...v1.3.0) (2026-04-01)
 
 

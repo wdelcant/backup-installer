@@ -1,3 +1,10 @@
+## [1.2.4](https://github.com/wdelcant/backup-installer/compare/v1.2.3...v1.2.4) (2026-04-01)
+
+
+### Bug Fixes
+
+* make Esc work on welcome screen and use dynamic version ([8814ca9](https://github.com/wdelcant/backup-installer/commit/8814ca9688d0fa0ca18ef9db531e219e2e3b042e)), closes [#3](https://github.com/wdelcant/backup-installer/issues/3)
+
 ## [1.2.3](https://github.com/wdelcant/backup-installer/compare/v1.2.2...v1.2.3) (2026-03-31)
 
 

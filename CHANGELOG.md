@@ -1,3 +1,10 @@
+## [1.7.2](https://github.com/wdelcant/backup-installer/compare/v1.7.1...v1.7.2) (2026-04-01)
+
+
+### Bug Fixes
+
+* use modal dialogs instead of fmt.Println in dashboard ([47494a1](https://github.com/wdelcant/backup-installer/commit/47494a106db00270ef27410669a59e0c3caa0b96))
+
 ## [1.7.1](https://github.com/wdelcant/backup-installer/compare/v1.7.0...v1.7.1) (2026-04-01)
 
 

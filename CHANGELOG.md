@@ -1,3 +1,10 @@
+## [1.7.4](https://github.com/wdelcant/backup-installer/compare/v1.7.3...v1.7.4) (2026-04-01)
+
+
+### Bug Fixes
+
+* create loop to allow reconfiguration without exiting ([327f50c](https://github.com/wdelcant/backup-installer/commit/327f50c2c2b6ba8c2ca2beaa6282f9268ec36afa))
+
 ## [1.7.3](https://github.com/wdelcant/backup-installer/compare/v1.7.2...v1.7.3) (2026-04-01)
 
 

@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -13,6 +14,9 @@ import (
 	"github.com/wdelcant/backup-installer/internal/crypto"
 	"github.com/wdelcant/backup-installer/internal/logo"
 )
+
+// ErrEditRequested is returned when user wants to edit configuration
+var ErrEditRequested = errors.New("edit configuration requested")
 
 // ModalType represents the type of modal to show
 type ModalType int
@@ -33,6 +37,7 @@ type DashboardModel struct {
 	keyManager    *crypto.MasterKeyManager
 	encryptor     *crypto.Encryptor
 	quitting      bool
+	editRequested bool
 	cursor        int
 	menuItems     []string
 	width         int
@@ -58,6 +63,7 @@ const (
 )
 
 // StartDashboard initializes and runs the dashboard TUI
+// Returns ErrEditRequested if user wants to edit configuration
 func StartDashboard(cfg *config.Config, baseDir string, configManager *config.Manager, keyManager *crypto.MasterKeyManager, encryptor *crypto.Encryptor) error {
 	model := DashboardModel{
 		config:        cfg,
@@ -65,6 +71,7 @@ func StartDashboard(cfg *config.Config, baseDir string, configManager *config.Ma
 		configManager: configManager,
 		keyManager:    keyManager,
 		encryptor:     encryptor,
+		editRequested: false,
 		menuItems: []string{
 			"📋 Ver configuración",
 			"✏️  Editar configuración",
@@ -78,8 +85,17 @@ func StartDashboard(cfg *config.Config, baseDir string, configManager *config.Ma
 	}
 
 	p := tea.NewProgram(model, tea.WithAltScreen())
-	_, err := p.Run()
-	return err
+	finalModel, err := p.Run()
+	if err != nil {
+		return err
+	}
+
+	// Check if edit was requested
+	if finalModel.(DashboardModel).editRequested {
+		return ErrEditRequested
+	}
+
+	return nil
 }
 
 // Init initializes the dashboard
@@ -134,7 +150,8 @@ func (m DashboardModel) handleMenuSelection() (tea.Model, tea.Cmd) {
 	case int(ItemViewConfig):
 		m.showConfigModal()
 	case int(ItemEditConfig):
-		// Launch wizard in edit mode - quit dashboard
+		// Signal that we want to edit
+		m.editRequested = true
 		return m, tea.Quit
 	case int(ItemRunBackup):
 		m.showRunBackupModal()

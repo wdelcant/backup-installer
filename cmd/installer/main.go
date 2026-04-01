@@ -137,7 +137,21 @@ func runWizard() error {
 		}
 
 		// Show dashboard with existing configuration
-		return tui.StartDashboard(existingConfig, baseDir, configManager, keyManager, encryptor)
+		err = tui.StartDashboard(existingConfig, baseDir, configManager, keyManager, encryptor)
+		if err == tui.ErrEditRequested {
+			// User wants to edit configuration, restart wizard with existing config
+			fmt.Println("\n🔄 Reconfigurando...")
+			fmt.Println()
+			if err := tui.StartWizard(false, baseDir, configManager, keyManager, encryptor); err != nil {
+				return err
+			}
+			fmt.Println("\n✅ Configuración actualizada exitosamente!")
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		return nil
 	}
 
 	// No configuration exists, start wizard for new setup

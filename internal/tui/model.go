@@ -2,6 +2,8 @@
 package tui
 
 import (
+	"fmt"
+
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/wdelcant/backup-installer/internal/config"
@@ -615,12 +617,17 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 // runInstallation starts the installation process
 func (m Model) runInstallation() tea.Cmd {
 	return func() tea.Msg {
-		// Simulate installation progress
-		progress := 0.0
-		for progress < 100 {
-			progress += 10
-			// Send progress updates
+		// Save configuration
+		if err := m.configManager.Save(m.config); err != nil {
+			return installCompleteMsg{err: fmt.Errorf("failed to save config: %w", err)}
 		}
+
+		// Generate pipeline script
+		// TODO: Implement pipeline generation
+
+		// Install crontab
+		// TODO: Implement crontab installation
+
 		return installCompleteMsg{err: nil}
 	}
 }

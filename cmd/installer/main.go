@@ -75,7 +75,17 @@ func main() {
 	}
 
 	// Default: run the installer wizard
-	if err := runWizard(); err != nil {
+	for {
+		err := runWizard()
+		if err == nil {
+			// Success, exit normally
+			break
+		}
+		if err == tui.ErrEditRequested {
+			// User wants to edit, loop will restart wizard
+			continue
+		}
+		// Actual error
 		fmt.Fprintf(os.Stderr, "\nError running installer: %v\n", err)
 		os.Exit(1)
 	}

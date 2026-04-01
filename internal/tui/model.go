@@ -451,7 +451,9 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.config.Source.Database = m.sourceInputs[2].Value()
 			m.config.Source.Username = m.sourceInputs[3].Value()
 			m.config.Source.Password = m.sourceInputs[4].Value()
+			// Ir a la pregunta de si quiere configurar destino
 			m.step = StepMode
+			m.selectedMode = 0 // Por defecto NO
 		case "tab", "down":
 			if m.cursor < len(m.sourceInputs)-1 {
 				m.cursor++
@@ -468,21 +470,22 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case StepMode:
 		switch msg.String() {
 		case "enter":
-			m.config.Target.Enabled = m.selectedMode == 1
-			if m.config.Target.Enabled {
+			// selectedMode: 0 = NO, 1 = SI
+			if m.selectedMode == 1 {
+				m.config.Target.Enabled = true
 				m.step = StepDBTarget
 				m.focusInput(0)
 			} else {
+				m.config.Target.Enabled = false
 				m.step = StepSchedule
 				m.focusInput(0)
 			}
-		case "up":
-			if m.selectedMode > 0 {
-				m.selectedMode--
-			}
-		case "down":
-			if m.selectedMode < 2 {
-				m.selectedMode++
+		case "up", "down", "tab":
+			// Toggle entre SI y NO
+			if m.selectedMode == 0 {
+				m.selectedMode = 1
+			} else {
+				m.selectedMode = 0
 			}
 		}
 

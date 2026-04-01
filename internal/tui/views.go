@@ -78,20 +78,22 @@ func (m Model) viewDBSource() string {
 
 // viewMode renders the backup mode selection screen
 func (m Model) viewMode() string {
-	content := logo.Header("Modo de Backup")
+	content := logo.Header("Configuración de Destino")
 	content += "\n\n"
 
-	modes := []struct {
-		id          int
+	content += "¿Deseás configurar una base de datos de destino para restore automático?\n\n"
+	content += lipgloss.NewStyle().Foreground(colorTextMuted).Render(
+		"Si configurás un destino, los backups de producción se restaurarán automáticamente en QA/Dev.") + "\n\n"
+
+	options := []struct {
 		title       string
 		description string
 	}{
-		{0, "Solo Backup", "Guarda backups .sql.gz localmente"},
-		{1, "Backup + Restore en QA/Dev", "Backup prod → Restaura automáticamente en QA"},
-		{2, "Backup + Restore Manual", "Te avisa cuando está listo para restaurar"},
+		{"NO", "Solo backup - Guardar archivos .sql.gz localmente"},
+		{"SÍ", "Backup + Restore - Restaurar automáticamente en otra base de datos"},
 	}
 
-	for i, mode := range modes {
+	for i, opt := range options {
 		selected := m.selectedMode == i
 		style := lipgloss.NewStyle()
 		if selected {
@@ -103,12 +105,12 @@ func (m Model) viewMode() string {
 			checkbox = "●"
 		}
 
-		content += fmt.Sprintf("%s %s\n", style.Render(checkbox+" "+mode.title), style.Render(mode.description))
+		content += fmt.Sprintf("%s %s\n", style.Render(checkbox+" "+opt.title), style.Render(opt.description))
 		content += "\n"
 	}
 
 	content += "\n"
-	content += buttonStyle.Render("[Enter] Seleccionar")
+	content += buttonStyle.Render("[Enter] Continuar")
 	content += "\n\n"
 	content += helpStyle.Render("[↑/↓] Cambiar opción  [Esc] Volver")
 

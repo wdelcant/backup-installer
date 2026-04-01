@@ -1,3 +1,10 @@
+## [1.5.1](https://github.com/wdelcant/backup-installer/compare/v1.5.0...v1.5.1) (2026-04-01)
+
+
+### Bug Fixes
+
+* correct printf format specifier for retention display ([f552ccb](https://github.com/wdelcant/backup-installer/commit/f552ccbe718da54b0d05ef8b7a8915074f059d71))
+
 # [1.5.0](https://github.com/wdelcant/backup-installer/compare/v1.4.0...v1.5.0) (2026-04-01)
 
 

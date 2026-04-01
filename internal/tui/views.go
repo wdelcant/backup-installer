@@ -222,7 +222,7 @@ func (m Model) viewSummary() string {
 		"ORIGEN:  %s @ %s:%d\n"+
 			"DESTINO: %s ( %s )\n"+
 			"SCHEDULE: %s\n"+
-			"RETENCIÓN: %d días\n"+
+			"RETENCIÓN: %s\n"+
 			"WEBHOOK: %s",
 		m.config.Source.Database,
 		m.config.Source.Host,

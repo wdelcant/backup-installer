@@ -75,24 +75,15 @@ func main() {
 	}
 
 	// Default: run the installer wizard
-	for {
-		err := runWizard()
-		if err == nil {
-			// Success, exit normally
-			break
-		}
-		if err == tui.ErrEditRequested {
-			// User wants to edit, loop will restart wizard
-			continue
-		}
-		// Actual error
+	if err := runWizard(false); err != nil {
 		fmt.Fprintf(os.Stderr, "\nError running installer: %v\n", err)
 		os.Exit(1)
 	}
 }
 
 // runWizard runs the interactive TUI installer or dashboard
-func runWizard() error {
+// forceWizard: if true, always show wizard even if config exists
+func runWizard(forceWizard bool) error {
 	// Get base directory (where the binary is located)
 	execPath, err := os.Executable()
 	if err != nil {
@@ -138,39 +129,46 @@ func runWizard() error {
 	fmt.Println(logo.Rendered(Version))
 	fmt.Println()
 
-	// Check if configuration already exists
-	if configManager.Exists() {
-		// Load existing configuration
-		existingConfig, err := configManager.Load()
-		if err != nil {
-			return fmt.Errorf("error loading existing config: %w", err)
-		}
+	// Main loop - keeps showing dashboard after wizard completes
+	for {
+		// Check if configuration already exists and we're not forcing wizard mode
+		if configManager.Exists() && !forceWizard {
+			// Load existing configuration
+			existingConfig, err := configManager.Load()
+			if err != nil {
+				return fmt.Errorf("error loading existing config: %w", err)
+			}
 
-		// Show dashboard with existing configuration
-		err = tui.StartDashboard(existingConfig, baseDir, configManager, keyManager, encryptor)
-		if err == tui.ErrEditRequested {
-			// User wants to edit configuration, restart wizard with existing config
-			fmt.Println("\n🔄 Reconfigurando...")
-			fmt.Println()
-			if err := tui.StartWizard(false, baseDir, configManager, keyManager, encryptor); err != nil {
+			// Show dashboard with existing configuration
+			err = tui.StartDashboard(existingConfig, baseDir, configManager, keyManager, encryptor)
+			if err == tui.ErrEditRequested {
+				// User wants to edit configuration, show wizard
+				fmt.Println("\n🔄 Reconfigurando...")
+				fmt.Println()
+				if err := tui.StartWizard(false, baseDir, configManager, keyManager, encryptor); err != nil {
+					return err
+				}
+				fmt.Println("\n✅ Configuración actualizada exitosamente!")
+				// Loop continues - will show dashboard again
+				continue
+			}
+			if err != nil {
 				return err
 			}
-			fmt.Println("\n✅ Configuración actualizada exitosamente!")
+			// User exited dashboard normally
 			return nil
 		}
-		if err != nil {
+
+		// No configuration exists OR force wizard mode, start wizard
+		if err := tui.StartWizard(true, baseDir, configManager, keyManager, encryptor); err != nil {
 			return err
 		}
-		return nil
-	}
 
-	// No configuration exists, start wizard for new setup
-	if err := tui.StartWizard(true, baseDir, configManager, keyManager, encryptor); err != nil {
-		return err
+		fmt.Println("\n✅ Installation completed successfully!")
+		// After wizard completes, loop continues
+		// This will show dashboard on next iteration if config exists
+		forceWizard = false
 	}
-
-	fmt.Println("\n✅ Installation completed successfully!")
-	return nil
 }
 
 // printVersion prints the current version

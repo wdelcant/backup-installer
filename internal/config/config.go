@@ -113,6 +113,20 @@ func NewManager(baseDir string, encryptor *crypto.Encryptor) *Manager {
 	}
 }
 
+// legacyStorageConfig is used to read old config format
+type legacyStorageConfig struct {
+	LocalPath              string   `yaml:"local_path"`
+	RetentionDays          int      `yaml:"retention_days"`
+	Compression            string   `yaml:"compression"`
+	AdditionalDestinations []string `yaml:"additional_destinations"`
+}
+
+// legacyConfig is used to read old config format for migration
+type legacyConfig struct {
+	Config        `yaml:",inline"`
+	LegacyStorage legacyStorageConfig `yaml:"storage"`
+}
+
 // Load reads and decrypts the configuration
 func (m *Manager) Load() (*Config, error) {
 	data, err := os.ReadFile(m.configPath)
@@ -123,6 +137,32 @@ func (m *Manager) Load() (*Config, error) {
 	var config Config
 	if err := yaml.Unmarshal(data, &config); err != nil {
 		return nil, fmt.Errorf("failed to parse config: %w", err)
+	}
+
+	// Check if this is an old config (Retention not set but RetentionDays exists in raw YAML)
+	if !config.Storage.Retention.Enabled && config.Storage.Retention.Son == 0 {
+		// Try to read as legacy format
+		var legacy legacyConfig
+		if err := yaml.Unmarshal(data, &legacy); err == nil {
+			// Migrate from old format
+			if legacy.LegacyStorage.RetentionDays > 0 {
+				config.Storage.Retention = RetentionConfig{
+					Enabled:     true,
+					Son:         legacy.LegacyStorage.RetentionDays,
+					Father:      4,
+					Grandfather: 12,
+				}
+				config.Storage.LocalPath = legacy.LegacyStorage.LocalPath
+				config.Storage.Compression = legacy.LegacyStorage.Compression
+				config.Storage.AdditionalDestinations = legacy.LegacyStorage.AdditionalDestinations
+
+				// Save migrated config
+				fmt.Println("🔄 Migrando configuración a nuevo formato GFS...")
+				if err := m.Save(&config); err != nil {
+					fmt.Printf("⚠️  Advertencia: no se pudo guardar la configuración migrada: %v\n", err)
+				}
+			}
+		}
 	}
 
 	// Decrypt sensitive fields

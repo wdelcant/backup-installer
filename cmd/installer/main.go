@@ -11,10 +11,10 @@ import (
 	"github.com/wdelcant/backup-installer/internal/tui"
 )
 
-const (
-	appName    = "backup-installer"
-	appVersion = "1.0.0"
-)
+// Version is set during build via ldflags
+var Version = "dev"
+
+const appName = "backup-installer"
 
 func main() {
 	// Get base directory (where the binary is located)
@@ -52,8 +52,11 @@ func main() {
 	// Initialize config manager
 	configManager := config.NewManager(baseDir, encryptor)
 
+	// Set version in TUI package
+	tui.Version = Version
+
 	// Show logo
-	fmt.Println(logo.Rendered(appVersion))
+	fmt.Println(logo.Rendered(Version))
 	fmt.Println()
 
 	// Start TUI

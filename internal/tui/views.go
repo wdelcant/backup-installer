@@ -12,7 +12,7 @@ func (m Model) viewWelcome() string {
 	var content string
 
 	// Use logo's welcome screen
-	content += logo.WelcomeScreen("1.0.0")
+	content += logo.WelcomeScreen(Version)
 	content += "\n\n"
 
 	// Keyboard shortcuts
@@ -272,7 +272,7 @@ func (m Model) viewInstalling() string {
 
 // viewSuccess renders the success screen
 func (m Model) viewSuccess() string {
-	content := logo.SuccessScreen("1.0.0")
+	content := logo.SuccessScreen(Version)
 	content += "\n\n"
 
 	// Success details

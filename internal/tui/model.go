@@ -418,6 +418,10 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.step--
 			m.cursor = 0
 			m.focusInput(0)
+		} else if m.step == StepWelcome {
+			// Exit from welcome screen
+			m.quitting = true
+			return m, tea.Quit
 		}
 		return m, nil
 	}

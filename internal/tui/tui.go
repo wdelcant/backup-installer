@@ -6,6 +6,9 @@ import (
 	"github.com/wdelcant/backup-installer/internal/crypto"
 )
 
+// Version is the application version, set by main
+var Version = "dev"
+
 // StartWizard initializes and runs the TUI wizard
 func StartWizard(isFirstRun bool, baseDir string, configManager *config.Manager, keyManager *crypto.MasterKeyManager, encryptor *crypto.Encryptor) error {
 	// Initialize model with NewModel constructor

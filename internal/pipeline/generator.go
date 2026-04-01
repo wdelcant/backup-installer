@@ -48,7 +48,9 @@ type PipelineData struct {
 	TargetPass    string
 	RestoreDelay  int
 
-	RetentionDays int
+	Son         int
+	Father      int
+	Grandfather int
 }
 
 // Generate creates the pipeline script
@@ -90,7 +92,9 @@ func (g *Generator) Generate(cfg *config.Config) (string, error) {
 		TargetPass:    cfg.Target.Password,
 		RestoreDelay:  cfg.Target.RestoreDelayMins,
 
-		RetentionDays: cfg.Storage.RetentionDays,
+		Son:         cfg.Storage.Retention.Son,
+		Father:      cfg.Storage.Retention.Father,
+		Grandfather: cfg.Storage.Retention.Grandfather,
 	}
 
 	if cfg.Webhook.Enabled {

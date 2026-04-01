@@ -170,11 +170,17 @@ func (m Model) viewRetention() string {
 	content := logo.Header("Retención y Almacenamiento")
 	content += "\n\n"
 
+	content += "Política de retención GFS (Grandfather-Father-Son)\n\n"
+	content += lipgloss.NewStyle().Foreground(colorTextMuted).Render(
+		"Esta política mantiene:\n• Backups diarios (Son)\n• Backups semanales (Father - domingos)\n• Backups mensuales (Grandfather - 1ro de mes)") + "\n\n"
+
 	content += RenderLabel("Directorio local") + m.retentionInputs[0].View() + "\n\n"
-	content += RenderLabel("Días a mantener") + m.retentionInputs[1].View() + "\n\n"
+	content += RenderLabel("Diarios (Son)") + m.retentionInputs[1].View() + "\n\n"
+	content += RenderLabel("Semanales (Father)") + m.retentionInputs[2].View() + "\n\n"
+	content += RenderLabel("Mensuales (Grandfather)") + m.retentionInputs[3].View() + "\n\n"
 
 	content += "\n"
-	content += helpStyle.Render("Los backups más antiguos se eliminarán automáticamente.\n")
+	content += helpStyle.Render("Ejemplo: 7/4/12 = 7 días + 4 semanas + 12 meses\n")
 	content += "\n"
 	content += buttonStyle.Render("[Enter] Continuar")
 	content += "\n\n"
@@ -234,7 +240,7 @@ func (m Model) viewSummary() string {
 			return "Solo Backup"
 		}(),
 		m.config.Schedule.CronExpression,
-		m.config.Storage.RetentionDays,
+		fmt.Sprintf("%d/%d/%d (S/F/G)", m.config.Storage.Retention.Son, m.config.Storage.Retention.Father, m.config.Storage.Retention.Grandfather),
 		func() string {
 			if m.config.Webhook.Enabled {
 				return "Sí configurado"

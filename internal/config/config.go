@@ -64,10 +64,18 @@ type ScheduleConfig struct {
 
 // StorageConfig holds backup storage configuration
 type StorageConfig struct {
-	LocalPath              string   `yaml:"local_path" json:"local_path"`
-	RetentionDays          int      `yaml:"retention_days" json:"retention_days"`
-	Compression            string   `yaml:"compression" json:"compression"`
-	AdditionalDestinations []string `yaml:"additional_destinations" json:"additional_destinations"`
+	LocalPath              string          `yaml:"local_path" json:"local_path"`
+	Compression            string          `yaml:"compression" json:"compression"`
+	AdditionalDestinations []string        `yaml:"additional_destinations" json:"additional_destinations"`
+	Retention              RetentionConfig `yaml:"retention" json:"retention"`
+}
+
+// RetentionConfig holds GFS retention policy
+type RetentionConfig struct {
+	Enabled     bool `yaml:"enabled" json:"enabled"`
+	Son         int  `yaml:"son" json:"son"`                 // Daily backups to keep (default: 7)
+	Father      int  `yaml:"father" json:"father"`           // Weekly backups to keep (default: 4)
+	Grandfather int  `yaml:"grandfather" json:"grandfather"` // Monthly backups to keep (default: 12)
 }
 
 // WebhookConfig holds n8n webhook configuration
@@ -253,9 +261,14 @@ func DefaultConfig() *Config {
 			Timezone:       "America/Santiago",
 		},
 		Storage: StorageConfig{
-			LocalPath:     DefaultBackupPath,
-			RetentionDays: DefaultRetentionDays,
-			Compression:   "gzip",
+			LocalPath:   DefaultBackupPath,
+			Compression: "gzip",
+			Retention: RetentionConfig{
+				Enabled:     true,
+				Son:         7,  // 7 daily backups
+				Father:      4,  // 4 weekly backups
+				Grandfather: 12, // 12 monthly backups
+			},
 		},
 		Webhook: WebhookConfig{
 			Enabled: false,

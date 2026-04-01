@@ -174,8 +174,8 @@ func NewModel(configManager *config.Manager, keyManager *crypto.MasterKeyManager
 		m.scheduleInputs[i] = t
 	}
 
-	// Initialize retention inputs
-	m.retentionInputs = make([]textinput.Model, 2)
+	// Initialize retention inputs (GFS policy)
+	m.retentionInputs = make([]textinput.Model, 4)
 	for i := range m.retentionInputs {
 		t := textinput.New()
 		t.CharLimit = 50
@@ -186,9 +186,15 @@ func NewModel(configManager *config.Manager, keyManager *crypto.MasterKeyManager
 			t.Placeholder = "./backups"
 			t.SetValue("./backups")
 			t.Focus()
-		case 1: // Retention days
+		case 1: // Son (daily backups)
 			t.Placeholder = "7"
 			t.SetValue("7")
+		case 2: // Father (weekly backups)
+			t.Placeholder = "4"
+			t.SetValue("4")
+		case 3: // Grandfather (monthly backups)
+			t.Placeholder = "12"
+			t.SetValue("12")
 		}
 		m.retentionInputs[i] = t
 	}
@@ -536,7 +542,10 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "enter":
 			m.config.Storage.LocalPath = m.retentionInputs[0].Value()
-			m.config.Storage.RetentionDays = parseInt(m.retentionInputs[1].Value())
+			m.config.Storage.Retention.Enabled = true
+			m.config.Storage.Retention.Son = parseInt(m.retentionInputs[1].Value())
+			m.config.Storage.Retention.Father = parseInt(m.retentionInputs[2].Value())
+			m.config.Storage.Retention.Grandfather = parseInt(m.retentionInputs[3].Value())
 			m.step = StepWebhook
 			m.focusInput(0)
 		case "tab", "down":

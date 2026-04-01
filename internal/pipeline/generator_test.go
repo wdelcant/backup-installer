@@ -58,8 +58,13 @@ echo "Backup started"
 			RestoreDelayMins: 30,
 		},
 		Storage: config.StorageConfig{
-			LocalPath:     "/tmp/backups",
-			RetentionDays: 7,
+			LocalPath: "/tmp/backups",
+			Retention: config.RetentionConfig{
+				Enabled:     true,
+				Son:         7,
+				Father:      4,
+				Grandfather: 12,
+			},
 		},
 		Webhook: config.WebhookConfig{
 			Enabled: false,

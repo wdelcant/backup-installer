@@ -27,8 +27,14 @@ func TestDefaultConfig(t *testing.T) {
 		t.Errorf("Expected default cron '0 2 * * *', got %s", config.Schedule.CronExpression)
 	}
 
-	if config.Storage.RetentionDays != DefaultRetentionDays {
-		t.Errorf("Expected default retention %d, got %d", DefaultRetentionDays, config.Storage.RetentionDays)
+	if config.Storage.Retention.Son != 7 {
+		t.Errorf("Expected default Son retention 7, got %d", config.Storage.Retention.Son)
+	}
+	if config.Storage.Retention.Father != 4 {
+		t.Errorf("Expected default Father retention 4, got %d", config.Storage.Retention.Father)
+	}
+	if config.Storage.Retention.Grandfather != 12 {
+		t.Errorf("Expected default Grandfather retention 12, got %d", config.Storage.Retention.Grandfather)
 	}
 }
 
@@ -72,9 +78,14 @@ func TestManagerSaveAndLoad(t *testing.T) {
 			Timezone:       "America/Santiago",
 		},
 		Storage: StorageConfig{
-			LocalPath:     "/tmp/backups",
-			RetentionDays: 7,
-			Compression:   "gzip",
+			LocalPath:   "/tmp/backups",
+			Compression: "gzip",
+			Retention: RetentionConfig{
+				Enabled:     true,
+				Son:         7,
+				Father:      4,
+				Grandfather: 12,
+			},
 		},
 	}
 

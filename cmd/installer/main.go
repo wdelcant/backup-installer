@@ -3,7 +3,9 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/wdelcant/backup-installer/internal/config"
 	"github.com/wdelcant/backup-installer/internal/crypto"
@@ -59,6 +61,12 @@ func main() {
 			return
 		case "--status", "-s", "status":
 			if err := showStatus(); err != nil {
+				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+				os.Exit(1)
+			}
+			return
+		case "--diagnose", "-d", "diagnose":
+			if err := runDiagnose(); err != nil {
 				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 				os.Exit(1)
 			}
@@ -159,6 +167,7 @@ Commands:
   --help, -h       Show this help message
   --update, -u     Self-update to the latest version
   --check-update   Check if a new version is available
+  --diagnose, -d   Run diagnostic check
   --config, -c     Show current configuration
   --run, -r        Run backup manually
   --status, -s     Show backup status
@@ -168,6 +177,9 @@ Examples:
   # Run installer
   %s
 
+  # Diagnose installation
+  %s --diagnose
+
   # Update to latest version
   %s --update
 
@@ -175,7 +187,7 @@ Examples:
   %s --check-update
 
 For more information: https://github.com/wdelcant/%s
-`, appName, appName, appName, appName, appName, appName)
+`, appName, appName, appName, appName, appName, appName, appName)
 }
 
 // runUpdate performs a self-update
@@ -318,7 +330,154 @@ func showStatus() error {
 	}
 
 	// Check crontab
-	// TODO: Check if cron job is installed
+	cmd := exec.Command("crontab", "-l")
+	output, err := cmd.Output()
+	if err != nil {
+		fmt.Println("⚠️  Could not read crontab")
+	} else {
+		cronContent := string(output)
+		if strings.Contains(cronContent, "backup") {
+			fmt.Println("✅ Cron job: Installed")
+		} else {
+			fmt.Println("❌ Cron job: Not found")
+		}
+	}
+
+	return nil
+}
+
+// runDiagnose performs a full diagnostic of the installation
+func runDiagnose() error {
+	fmt.Println("🔍 Diagnóstico de instalación")
+	fmt.Println()
+
+	// Get base directory
+	execPath, err := os.Executable()
+	if err != nil {
+		return fmt.Errorf("error getting executable path: %w", err)
+	}
+
+	baseDir := filepath.Dir(execPath)
+
+	fmt.Printf("📂 Directorio base: %s\n", baseDir)
+	fmt.Println()
+
+	// Check binary
+	fmt.Println("1️⃣  Verificando binario:")
+	if _, err := os.Stat(execPath); err == nil {
+		info, _ := os.Stat(execPath)
+		fmt.Printf("   ✅ Binario encontrado: %s (%d bytes)\n", execPath, info.Size())
+		fmt.Printf("   📅 Modificado: %s\n", info.ModTime().Format("2006-01-02 15:04:05"))
+	} else {
+		fmt.Printf("   ❌ Binario no encontrado: %s\n", execPath)
+	}
+	fmt.Println()
+
+	// Check config directory
+	fmt.Println("2️⃣  Verificando configuración:")
+	configDir := filepath.Join(baseDir, "config")
+	configPath := filepath.Join(configDir, "config.yaml")
+
+	if _, err := os.Stat(configDir); err == nil {
+		fmt.Printf("   ✅ Directorio de config existe: %s\n", configDir)
+
+		// List files in config dir
+		entries, err := os.ReadDir(configDir)
+		if err == nil && len(entries) > 0 {
+			fmt.Printf("   📁 Archivos en config (%d):\n", len(entries))
+			for _, entry := range entries {
+				fmt.Printf("      - %s\n", entry.Name())
+			}
+		} else if len(entries) == 0 {
+			fmt.Printf("   ⚠️  Directorio de config vacío\n")
+		}
+
+		// Check config.yaml specifically
+		if _, err := os.Stat(configPath); err == nil {
+			info, _ := os.Stat(configPath)
+			fmt.Printf("   ✅ config.yaml existe (%d bytes)\n", info.Size())
+			fmt.Printf("   📅 Modificado: %s\n", info.ModTime().Format("2006-01-02 15:04:05"))
+		} else {
+			fmt.Printf("   ❌ config.yaml no existe\n")
+		}
+	} else {
+		fmt.Printf("   ❌ Directorio de config no existe: %s\n", configDir)
+	}
+	fmt.Println()
+
+	// Check scripts directory
+	fmt.Println("3️⃣  Verificando scripts:")
+	scriptsDir := filepath.Join(baseDir, "scripts")
+	if _, err := os.Stat(scriptsDir); err == nil {
+		fmt.Printf("   ✅ Directorio de scripts existe: %s\n", scriptsDir)
+		entries, _ := os.ReadDir(scriptsDir)
+		if len(entries) > 0 {
+			fmt.Printf("   📁 Scripts encontrados (%d):\n", len(entries))
+			for _, entry := range entries {
+				fmt.Printf("      - %s\n", entry.Name())
+			}
+		}
+	} else {
+		fmt.Printf("   ❌ Directorio de scripts no existe\n")
+	}
+	fmt.Println()
+
+	// Check crontab
+	fmt.Println("4️⃣  Verificando crontab:")
+	cmd := exec.Command("crontab", "-l")
+	output, err := cmd.Output()
+	if err != nil {
+		fmt.Printf("   ⚠️  No se pudo leer crontab: %v\n", err)
+	} else {
+		cronContent := string(output)
+		if strings.Contains(cronContent, "backup") {
+			fmt.Printf("   ✅ Encontrado cronjob de backup:\n")
+			lines := strings.Split(cronContent, "\n")
+			for _, line := range lines {
+				if strings.Contains(line, "backup") {
+					fmt.Printf("      %s\n", line)
+				}
+			}
+		} else {
+			fmt.Printf("   ❌ No se encontró cronjob de backup\n")
+		}
+	}
+	fmt.Println()
+
+	// Check logs directory
+	fmt.Println("5️⃣  Verificando logs:")
+	logsDir := filepath.Join(baseDir, "logs")
+	if _, err := os.Stat(logsDir); err == nil {
+		fmt.Printf("   ✅ Directorio de logs existe: %s\n", logsDir)
+		entries, _ := os.ReadDir(logsDir)
+		if len(entries) > 0 {
+			fmt.Printf("   📄 Archivos de log (%d):\n", len(entries))
+			for _, entry := range entries {
+				if !entry.IsDir() {
+					info, _ := entry.Info()
+					fmt.Printf("      - %s (%d bytes, %s)\n",
+						entry.Name(),
+						info.Size(),
+						info.ModTime().Format("2006-01-02 15:04"))
+				}
+			}
+		} else {
+			fmt.Printf("   ⚠️  No hay archivos de log\n")
+		}
+	} else {
+		fmt.Printf("   ⚠️  Directorio de logs no existe\n")
+	}
+	fmt.Println()
+
+	// Summary
+	fmt.Println("📋 Resumen:")
+	fmt.Println("   Usa estos comandos para gestionar tu instalación:")
+	fmt.Printf("   - %s --diagnose : Diagnóstico completo\n", appName)
+	fmt.Printf("   - %s --config    : Ver configuración\n", appName)
+	fmt.Printf("   - %s --status    : Ver estado\n", appName)
+	fmt.Printf("   - %s --run       : Ejecutar backup manual\n", appName)
+	fmt.Printf("   - %s --uninstall : Desinstalar\n", appName)
+	fmt.Println()
 
 	return nil
 }

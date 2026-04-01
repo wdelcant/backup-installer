@@ -73,7 +73,7 @@ func main() {
 	}
 }
 
-// runWizard runs the interactive TUI installer
+// runWizard runs the interactive TUI installer or dashboard
 func runWizard() error {
 	// Get base directory (where the binary is located)
 	execPath, err := os.Executable()
@@ -92,9 +92,6 @@ func runWizard() error {
 	// Initialize master key manager
 	configDir := filepath.Join(baseDir, "config")
 	keyManager := crypto.NewMasterKeyManager(configDir)
-
-	// Check if this is first run (no master key)
-	isFirstRun := !keyManager.KeyExists()
 
 	// Get or create master key
 	masterKey, err := keyManager.GetOrCreateMasterKey()
@@ -123,8 +120,20 @@ func runWizard() error {
 	fmt.Println(logo.Rendered(Version))
 	fmt.Println()
 
-	// Start TUI
-	if err := tui.StartWizard(isFirstRun, baseDir, configManager, keyManager, encryptor); err != nil {
+	// Check if configuration already exists
+	if configManager.Exists() {
+		// Load existing configuration
+		existingConfig, err := configManager.Load()
+		if err != nil {
+			return fmt.Errorf("error loading existing config: %w", err)
+		}
+
+		// Show dashboard with existing configuration
+		return tui.StartDashboard(existingConfig, baseDir, configManager, keyManager, encryptor)
+	}
+
+	// No configuration exists, start wizard for new setup
+	if err := tui.StartWizard(true, baseDir, configManager, keyManager, encryptor); err != nil {
 		return err
 	}
 

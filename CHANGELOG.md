@@ -1,3 +1,10 @@
+# [1.9.0](https://github.com/wdelcant/backup-installer/compare/v1.8.0...v1.9.0) (2026-04-07)
+
+
+### Features
+
+* add functional backup execution with progress bar ([e5cd44c](https://github.com/wdelcant/backup-installer/commit/e5cd44cb6f03cb322ea5cc1f464ab750bfbd8316))
+
 # [1.8.0](https://github.com/wdelcant/backup-installer/compare/v1.7.5...v1.8.0) (2026-04-07)
 
 

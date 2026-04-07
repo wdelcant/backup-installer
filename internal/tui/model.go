@@ -3,11 +3,16 @@ package tui
 
 import (
 	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/wdelcant/backup-installer/internal/config"
 	"github.com/wdelcant/backup-installer/internal/crypto"
+	"github.com/wdelcant/backup-installer/internal/pipeline"
 )
 
 // Step represents a wizard step
@@ -623,13 +628,89 @@ func (m Model) runInstallation() tea.Cmd {
 		}
 
 		// Generate pipeline script
-		// TODO: Implement pipeline generation
+		if err := m.generatePipeline(); err != nil {
+			return installCompleteMsg{err: fmt.Errorf("failed to generate pipeline: %w", err)}
+		}
 
 		// Install crontab
-		// TODO: Implement crontab installation
+		if err := m.installCrontab(); err != nil {
+			return installCompleteMsg{err: fmt.Errorf("failed to install crontab: %w", err)}
+		}
 
 		return installCompleteMsg{err: nil}
 	}
+}
+
+// generatePipeline generates the backup pipeline script
+func (m Model) generatePipeline() error {
+	scriptsDir := filepath.Join(m.baseDir, "scripts")
+	if err := os.MkdirAll(scriptsDir, 0755); err != nil {
+		return err
+	}
+
+	scriptPath := filepath.Join(scriptsDir, "pipeline.sh")
+
+	// Generate script content using pipeline generator
+	generator := pipeline.NewGenerator(m.baseDir)
+	scriptContent, err := generator.Generate(m.config)
+	if err != nil {
+		return err
+	}
+
+	// Write script to file
+	if err := os.WriteFile(scriptPath, []byte(scriptContent), 0755); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// installCrontab installs the backup cronjob
+func (m Model) installCrontab() error {
+	scriptPath := filepath.Join(m.baseDir, "scripts", "pipeline.sh")
+	logsDir := filepath.Join(m.baseDir, "logs")
+
+	// Ensure logs directory exists
+	if err := os.MkdirAll(logsDir, 0755); err != nil {
+		return err
+	}
+
+	// Get current crontab
+	cmd := exec.Command("crontab", "-l")
+	output, err := cmd.Output()
+	var currentCrontab string
+	if err == nil {
+		currentCrontab = string(output)
+	}
+
+	// Check if our cronjob already exists
+	cronJob := fmt.Sprintf("%s %s %s >> %s/cron.log 2>&1",
+		m.config.Schedule.CronExpression,
+		scriptPath,
+		"", // Additional args if needed
+		logsDir)
+
+	// Remove existing backup-installer cronjob if present
+	lines := strings.Split(currentCrontab, "\n")
+	var newLines []string
+	for _, line := range lines {
+		if !strings.Contains(line, "pipeline.sh") && !strings.Contains(line, "backup-installer") {
+			newLines = append(newLines, line)
+		}
+	}
+
+	// Add our cronjob
+	newLines = append(newLines, cronJob)
+
+	// Write new crontab
+	newCrontab := strings.Join(newLines, "\n")
+	cmd = exec.Command("crontab", "-")
+	cmd.Stdin = strings.NewReader(newCrontab)
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // progressMsg is sent during installation

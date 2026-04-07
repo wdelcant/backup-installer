@@ -622,19 +622,22 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 // runInstallation starts the installation process
 func (m Model) runInstallation() tea.Cmd {
 	return func() tea.Msg {
-		// Save configuration
+		// Step 1: Save configuration
 		if err := m.configManager.Save(m.config); err != nil {
 			return installCompleteMsg{err: fmt.Errorf("failed to save config: %w", err)}
 		}
 
-		// Generate pipeline script
+		// Step 2: Generate pipeline script (CRITICAL - must succeed)
 		if err := m.generatePipeline(); err != nil {
 			return installCompleteMsg{err: fmt.Errorf("failed to generate pipeline: %w", err)}
 		}
 
-		// Install crontab
+		// Step 3: Install crontab (OPTIONAL - don't fail entire installation)
 		if err := m.installCrontab(); err != nil {
-			return installCompleteMsg{err: fmt.Errorf("failed to install crontab: %w", err)}
+			// Log warning but continue - user can install crontab manually later
+			// This prevents hanging when crontab command is not available or blocked
+			fmt.Fprintf(os.Stderr, "⚠️  Warning: crontab installation failed: %v\n", err)
+			fmt.Fprintf(os.Stderr, "   You can install crontab manually later.\n")
 		}
 
 		return installCompleteMsg{err: nil}

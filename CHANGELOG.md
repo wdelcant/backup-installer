@@ -1,3 +1,10 @@
+## [1.9.1](https://github.com/wdelcant/backup-installer/compare/v1.9.0...v1.9.1) (2026-04-07)
+
+
+### Bug Fixes
+
+* prevent crontab installation from hanging ([4a4343e](https://github.com/wdelcant/backup-installer/commit/4a4343e9b81d6024a7ed4793c5b8fdefaa5d716a))
+
 # [1.9.0](https://github.com/wdelcant/backup-installer/compare/v1.8.0...v1.9.0) (2026-04-07)
 
 

@@ -675,39 +675,41 @@ func (m Model) installCrontab() error {
 		return err
 	}
 
-	// Get current crontab
-	cmd := exec.Command("crontab", "-l")
-	output, err := cmd.Output()
-	var currentCrontab string
-	if err == nil {
-		currentCrontab = string(output)
-	}
-
-	// Check if our cronjob already exists
-	cronJob := fmt.Sprintf("%s %s %s >> %s/cron.log 2>&1",
+	// Create cronjob line
+	cronJob := fmt.Sprintf("%s %s >> %s/cron.log 2>&1",
 		m.config.Schedule.CronExpression,
 		scriptPath,
-		"", // Additional args if needed
 		logsDir)
 
-	// Remove existing backup-installer cronjob if present
-	lines := strings.Split(currentCrontab, "\n")
-	var newLines []string
-	for _, line := range lines {
-		if !strings.Contains(line, "pipeline.sh") && !strings.Contains(line, "backup-installer") {
-			newLines = append(newLines, line)
+	// Try to install crontab
+	// First, try to get existing crontab
+	cmd := exec.Command("crontab", "-l")
+	output, err := cmd.Output()
+
+	var newCrontab string
+	if err != nil {
+		// No existing crontab, create new one
+		newCrontab = cronJob
+	} else {
+		// Has existing crontab, append our job
+		existing := strings.TrimSpace(string(output))
+		// Remove any existing backup-installer cronjobs
+		lines := strings.Split(existing, "\n")
+		var filteredLines []string
+		for _, line := range lines {
+			if !strings.Contains(line, "pipeline.sh") && !strings.Contains(line, "backup-installer") {
+				filteredLines = append(filteredLines, line)
+			}
 		}
+		filteredLines = append(filteredLines, cronJob)
+		newCrontab = strings.Join(filteredLines, "\n")
 	}
 
-	// Add our cronjob
-	newLines = append(newLines, cronJob)
-
-	// Write new crontab
-	newCrontab := strings.Join(newLines, "\n")
+	// Install the crontab
 	cmd = exec.Command("crontab", "-")
-	cmd.Stdin = strings.NewReader(newCrontab)
+	cmd.Stdin = strings.NewReader(newCrontab + "\n")
 	if err := cmd.Run(); err != nil {
-		return err
+		return fmt.Errorf("failed to install crontab: %w", err)
 	}
 
 	return nil

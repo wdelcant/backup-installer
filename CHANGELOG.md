@@ -1,3 +1,10 @@
+# [1.8.0](https://github.com/wdelcant/backup-installer/compare/v1.7.5...v1.8.0) (2026-04-07)
+
+
+### Features
+
+* implement pipeline generation and crontab installation ([846cbb5](https://github.com/wdelcant/backup-installer/commit/846cbb5dfbe9f7836ceaf39a1f95058055d0d9e4))
+
 ## [1.7.5](https://github.com/wdelcant/backup-installer/compare/v1.7.4...v1.7.5) (2026-04-01)
 
 

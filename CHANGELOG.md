@@ -1,3 +1,10 @@
+# [1.10.0](https://github.com/wdelcant/backup-installer/compare/v1.9.1...v1.10.0) (2026-04-07)
+
+
+### Features
+
+* add system requirements check before installation ([75b0d52](https://github.com/wdelcant/backup-installer/commit/75b0d52564a3932ee7089b9214f5d1e0aeecfb2d))
+
 ## [1.9.1](https://github.com/wdelcant/backup-installer/compare/v1.9.0...v1.9.1) (2026-04-07)
 
 

@@ -1,9 +1,11 @@
 package tui
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -27,6 +29,8 @@ const (
 	ModalLogs
 	ModalStatus
 	ModalConfirm
+	ModalRunning
+	ModalResult
 )
 
 // DashboardModel represents the dashboard TUI state
@@ -44,9 +48,17 @@ type DashboardModel struct {
 	height        int
 
 	// Modal state
-	modalType    ModalType
-	modalContent string
-	modalTitle   string
+	modalType       ModalType
+	modalContent    string
+	modalTitle      string
+	modalConfirmMsg string
+
+	// Running state
+	runningProgress float64
+	runningStatus   string
+	runningOutput   strings.Builder
+	runningComplete bool
+	runningSuccess  bool
 }
 
 // DashboardItem represents a menu item
@@ -107,13 +119,23 @@ func (m DashboardModel) Init() tea.Cmd {
 func (m DashboardModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		// If modal is open, handle modal keys
-		if m.modalType != ModalNone {
+		// If modal is open (but not running), handle modal keys
+		if m.modalType != ModalNone && m.modalType != ModalRunning {
 			switch msg.String() {
 			case "esc", "enter", "q":
+				if m.modalType == ModalConfirm && m.modalConfirmMsg == "run_backup" {
+					// User confirmed, start backup
+					return m, m.startBackup()
+				}
 				m.modalType = ModalNone
 				m.modalContent = ""
+				m.modalConfirmMsg = ""
 			}
+			return m, nil
+		}
+
+		// If running, only allow q to quit (but don't allow quitting)
+		if m.modalType == ModalRunning {
 			return m, nil
 		}
 
@@ -140,6 +162,22 @@ func (m DashboardModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
+	case progressMsg:
+		m.runningProgress = msg.progress
+		m.runningStatus = msg.status
+		return m, nil
+	case backupCompleteMsg:
+		m.runningComplete = true
+		m.runningSuccess = msg.success
+		m.modalType = ModalResult
+		if msg.err != nil {
+			m.modalTitle = "❌ Error en backup"
+			m.modalContent = fmt.Sprintf("El backup falló:\n\n%s", msg.err.Error())
+		} else {
+			m.modalTitle = "✅ Backup completado"
+			m.modalContent = fmt.Sprintf("El backup se completó exitosamente.\n\n%s", m.runningOutput.String())
+		}
+		return m, nil
 	}
 	return m, nil
 }
@@ -220,16 +258,51 @@ func (m DashboardModel) renderModal() string {
 	content += titleStyle.Render(m.modalTitle)
 	content += "\n\n"
 
-	// Content
-	content += m.modalContent
-	content += "\n\n"
+	// Content based on modal type
+	switch m.modalType {
+	case ModalRunning:
+		content += m.renderProgressBar()
+		content += "\n\n"
+		content += m.runningStatus
+		content += "\n\n"
+		content += lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#F59E0B")).
+			Render("⏳ Ejecutando backup...")
+		return modalStyle.Render(content)
+	case ModalResult:
+		content += m.modalContent
+		content += "\n\n"
+		content += lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#6B7280")).
+			Render("[Enter] o [Esc] Cerrar")
+		return modalStyle.Render(content)
+	default:
+		content += m.modalContent
+		content += "\n\n"
+		content += lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#6B7280")).
+			Render("[Enter] o [Esc] Cerrar")
+		return modalStyle.Render(content)
+	}
+}
 
-	// Footer
-	content += lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#6B7280")).
-		Render("[Enter] o [Esc] Cerrar")
+// renderProgressBar renders a progress bar
+func (m DashboardModel) renderProgressBar() string {
+	barWidth := 50
+	filled := int((m.runningProgress / 100.0) * float64(barWidth))
+	if filled > barWidth {
+		filled = barWidth
+	}
 
-	return modalStyle.Render(content)
+	bar := strings.Repeat("█", filled) + strings.Repeat("░", barWidth-filled)
+
+	progressStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#00D4AA"))
+
+	return fmt.Sprintf("%s\n\n%s %5.1f%%",
+		progressStyle.Render(bar),
+		progressStyle.Render("Progreso:"),
+		m.runningProgress)
 }
 
 // renderStatusBox renders the status information box
@@ -341,10 +414,68 @@ func (m *DashboardModel) showConfigModal() {
 // showRunBackupModal shows backup execution in a modal
 func (m *DashboardModel) showRunBackupModal() {
 	m.modalType = ModalConfirm
-	m.modalTitle = "🔄 Ejecutar backup"
-	m.modalContent = "Esta función ejecutaría el backup manualmente.\n\n" +
-		"Para ejecutar ahora, usa el comando:\n" +
-		"backup-installer --run"
+	m.modalTitle = "🔄 Ejecutar backup ahora"
+	m.modalContent = "¿Estás seguro de que querés ejecutar el backup ahora?\n\n" +
+		"Esto ejecutará el script de backup manualmente.\n" +
+		"El proceso puede tardar algunos minutos.\n\n" +
+		"Presiona [Enter] para confirmar o [Esc] para cancelar."
+	m.modalConfirmMsg = "run_backup"
+}
+
+// startBackup starts the backup execution
+func (m *DashboardModel) startBackup() tea.Cmd {
+	return func() tea.Msg {
+		scriptPath := filepath.Join(m.baseDir, "scripts", "pipeline.sh")
+
+		// Check if script exists
+		if _, err := os.Stat(scriptPath); os.IsNotExist(err) {
+			return backupCompleteMsg{
+				success: false,
+				err:     fmt.Errorf("el script pipeline.sh no existe. Ejecutá el wizard para configurarlo"),
+			}
+		}
+
+		// Execute the script
+		cmd := exec.Command(scriptPath)
+		cmd.Dir = m.baseDir
+
+		// Read output line by line
+		stdout, err := cmd.StdoutPipe()
+		if err != nil {
+			return backupCompleteMsg{success: false, err: err}
+		}
+
+		if err := cmd.Start(); err != nil {
+			return backupCompleteMsg{success: false, err: err}
+		}
+
+		// Read output
+		scanner := bufio.NewScanner(stdout)
+		lineCount := 0
+		for scanner.Scan() {
+			line := scanner.Text()
+			m.runningOutput.WriteString(line + "\n")
+			lineCount++
+
+			// Update progress based on lines read
+			progress := float64(lineCount) / 20.0 * 100.0
+			if progress > 95 {
+				progress = 95
+			}
+		}
+
+		if err := cmd.Wait(); err != nil {
+			return backupCompleteMsg{
+				success: false,
+				err:     fmt.Errorf("el script falló: %w\n\n%s", err, m.runningOutput.String()),
+			}
+		}
+
+		m.runningProgress = 100
+		m.runningStatus = "Completado"
+
+		return backupCompleteMsg{success: true, err: nil}
+	}
 }
 
 // showLogsModal shows logs in a modal
@@ -403,4 +534,10 @@ func (m *DashboardModel) showUninstallConfirm() {
 		"  • Cron jobs\n\n" +
 		"Los backups existentes NO se eliminarán.\n\n" +
 		"Para confirmar, usa: backup-installer --uninstall"
+}
+
+// backupCompleteMsg is sent when backup finishes
+type backupCompleteMsg struct {
+	success bool
+	err     error
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/wdelcant/backup-installer/internal/config"
 	"github.com/wdelcant/backup-installer/internal/crypto"
 	"github.com/wdelcant/backup-installer/internal/logo"
+	"github.com/wdelcant/backup-installer/internal/requirements"
 	"github.com/wdelcant/backup-installer/internal/tui"
 	"github.com/wdelcant/backup-installer/internal/version"
 )
@@ -123,6 +124,17 @@ func runWizard(forceWizard bool) error {
 		fmt.Println()
 		fmt.Println(version.RenderUpdateNotification(Version, release.TagName))
 		fmt.Println()
+	}
+
+	// Check system requirements
+	fmt.Println()
+	reqResult := requirements.Check()
+	fmt.Println(requirements.RenderResult(reqResult))
+	fmt.Println()
+
+	// If missing required requirements, exit
+	if !reqResult.AllInstalled {
+		return fmt.Errorf("missing required system packages")
 	}
 
 	// Show logo
